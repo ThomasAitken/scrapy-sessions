@@ -5,14 +5,16 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='scrapy-sessions',
-    version='0.1',
+    version='0.1.1',
     author='Thomas Aitken',
     author_email='tclaitken@gmail.com',
     description='Session management extension for Scrapy.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/ThomasAitken/scrapy-sessions',
-    packages=setuptools.find_packages(),
+    packages=[
+        'scrapy_sessions',
+    ],
     classifiers=[
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
