@@ -173,6 +173,9 @@ def get_neat_cookies(resp_headers):
             for c in resp_headers.getlist('Set-Cookie')]
     cl_fancy = []
     for c in cl:
-        c_out = dict(p.split('=') for p in c.split('; ')[:1])
-        cl_fancy.append(c_out)
+        content = c.split('; ')[0]
+        split = content.split('=')
+        key = split[0]
+        val = ''.join(split[1:])
+        cl_fancy.append({key: val})
     return cl_fancy
