@@ -19,7 +19,7 @@ The **scrapy-sessions** `CookiesMiddleware` is designed to override the default 
 
 The `"COOKIES_ENABLED"` and `"COOKIES_DEBUG"` settings work exactly as with the default middleware: if `"COOKIES_ENABLED"` is disabled, this middleware is disabled, and if `"COOKIES_DEBUG"` is enabled, you will get the same debug messages about cookies sent and received.
 
-With this said, there are some important differences to note. With the default Scrapy middleware, the value of the `"cookiejar"` key in your request.meta names the session (cookie jar) that the request will use. If the session does not exist, a new session is created. The exact same applies in this library, except that you can now also use the `"session_id"` key for this purpose. The default value for this is now `0`, rather than `None`. So, if you don't use either of these keywords in any of your requests, each request will by default send the cookies associated with session `0`, and add any cookies it receives to session `0`. 
+With this said, there are some important differences to note. With the default Scrapy middleware, the value of the `"cookiejar"` key in your `request.meta` names the session (cookie jar) that the request will use. If the session does not exist, a new session is created. The exact same applies in this library, except that you can now also use the `"session_id"` key for this purpose. The default value for this is now `0`, rather than `None`. So, if you don't use either of these keywords in any of your requests, each request will by default send the cookies associated with session `0`, and add any cookies it receives to session `0`. 
 
 --- 
 ## Set up
