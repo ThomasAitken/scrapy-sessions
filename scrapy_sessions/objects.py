@@ -1,6 +1,11 @@
 import itertools
+import logging
 from http.cookiejar import time2netscape
 from scrapy.http.cookies import CookieJar
+from scrapy.utils.log import failure_to_exc_info
+
+
+logger = logging.getLogger(__name__)
 
 
 class DynamicJar(CookieJar):
@@ -11,6 +16,8 @@ class DynamicJar(CookieJar):
 
 
 class Sessions:
+    logger = logging.getLogger(__name__)
+
     def __init__(self, jars, profiles, spider, engine):
         self.jars=jars
         self.profiles=profiles
@@ -29,9 +36,9 @@ class Sessions:
     def _flatten_cookiejar(jar):
         """Returns map object of cookies in http.Cookiejar.Cookies format
         """
-        full_cookies = [f_k for f_k in itertools.chain.from_iterable(p.values() \
-            for p in jar._cookies.values())]
-        cookies = map(lambda f_k: next(iter(f_k.values())), full_cookies)
+        full_cookies = list(itertools.chain.from_iterable(
+                            p.values() for p in jar._cookies.values()))[0]
+        cookies = full_cookies.values()
         return cookies
 
     @staticmethod
@@ -82,8 +89,22 @@ class Sessions:
             if renewal_request.callback is None:
                 renewal_request.callback=self._renew
             renewal_request.dont_filter=True
-            d = self.engine._download(renewal_request, self.spider)
-            d.addBoth(lambda _: self.engine.slot.nextcall.schedule())
+            self._download_request(renewal_request)
+
+    def _download_request(self, request):
+        d = self.engine._download(request, self.spider)
+        d.addBoth(self.engine._handle_downloader_output, request, self.spider)
+        d.addErrback(lambda f: logger.info('Error while handling downloader output',
+                                        exc_info=failure_to_exc_info(f),
+                                        extra={'spider': self.spider}))
+        d.addBoth(lambda _: self.engine.slot.remove_request(request))
+        d.addErrback(lambda f: logger.info('Error while removing request from slot',
+                                        exc_info=failure_to_exc_info(f),
+                                        extra={'spider': self.spider}))
+        d.addBoth(lambda _: self.engine.slot.nextcall.schedule())
+        d.addErrback(lambda f: logger.info('Error while scheduling new request',
+                                        exc_info=failure_to_exc_info(f),
+                                        extra={'spider': self.spider}))
 
     def _renew(self, response, **cb_kwargs):
         pass

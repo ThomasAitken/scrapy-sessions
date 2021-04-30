@@ -1,5 +1,6 @@
-from scrapy.utils.conf import closest_scrapy_cfg
+import os
 from importlib import import_module, util
+from scrapy.utils.conf import closest_scrapy_cfg
 
 def load_profiles(path):
     def get_project_dir():

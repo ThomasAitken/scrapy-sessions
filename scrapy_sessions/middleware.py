@@ -80,7 +80,7 @@ class CookiesMiddleware:
             return request
 
         # convenient attribute
-        response.cookies = get_neat_cookies(response.headers)
+        request.meta["cookies"] = get_neat_cookies(response.headers)
 
         # extract cookies from Set-Cookie and drop invalid/expired cookies
         jar.extract_cookies(response, request)
