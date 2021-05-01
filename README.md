@@ -5,7 +5,7 @@ A session-management extension for Scrapy.
 
 ## Overview
 This library resolves at least three long-standing issues in Scrapy's session-management system that people have raised concerns about for years:
-1. Scrapy's sessions are a black box. They can't be exposed within a scrape and they can't be directly altered. 
+1. Scrapy's sessions are effectively a black box. They are difficult to expose and alter within a scrape.
 2. Scrapy makes it very difficult to easily replace a session (and/or general 'profile') unilaterally across all requests that are scheduled or enqueued. This is important for engaging with websites that have session-expiry logic.
 3. Scrapy provides no native capability for maintaing distinct profiles (client identities) within a single scrape.
 
