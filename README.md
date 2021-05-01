@@ -6,7 +6,7 @@ A session-management extension for Scrapy.
 ## Overview
 This library resolves at least three long-standing issues in Scrapy's session-management system that people have raised concerns about for years:
 1. Scrapy's sessions are effectively a black box. They are difficult to expose and alter within a scrape.
-2. Scrapy makes it very difficult to easily replace a session (and/or general 'profile') unilaterally across all requests that are scheduled or enqueued. This is important for engaging with websites that have session-expiry logic.
+2. Scrapy makes it very difficult to replace/refresh a session (and/or general 'profile') unilaterally across all requests that are scheduled or enqueued. This is important for engaging with websites that have session-expiry logic.
 3. Scrapy provides no native capability for maintaing distinct profiles (client identities) within a single scrape.
 
 This library contains a `CookiesMiddleware` that exposes the Scrapy cookie jars in the spider attribute `sessions`. This is an instance of the new `Sessions` class (`objects.Sessions`) that allows one to examine the content of the current sessions and to clear and/or renew a session that is failing. The renewal procedure short-circuits the Scrapy request scheduling process, inducing an immediate download of the request specified, ahead of all others. This does not cause any adverse consequences (for example, scrape statistics are maintained perfectly).
