@@ -36,7 +36,9 @@ DOWNLOADER_MIDDLEWARES = {
 This will allow you to interact with the `spider.sessions` attribute, in order to inspect, clear and renew sessions (see [*usage*](#usage)). It will also give you access to the response cookies via `response.meta["cookies"]`. 
 
 ### [Profiles](#profiles)
-After doing the above, add the following to `settings.py`:
+This is a separate add-on that hooks onto the sessions.
+
+After changing `settings.py` as above, add the following:
 `SESSIONS_PROFILES_SYNC: True`.
 
 Then create a `profiles.py` file at the head of your project similar to the following:
@@ -78,7 +80,7 @@ In dictionary format:
 The default session:
 `self.sessions.clear()`
 
-Specifying a session works the same as before.
+Specifying a session works the same as in `get`.
 
 ### Clearing and immediately renewing a session (instantly downloaded out of sync)
 The default session:
@@ -93,6 +95,13 @@ The profile for the default session:
 Specifying a session works the same as before.
 
 This method will only work if `SESSIONS_PROFILES_SYNC` is enabled in the spider settings.
+
+---
+## Session Refresh Logic
+The syntax for refreshing a session was included above ("Clearing and immediately renewing a session"), but since it is the most complicated part of the library it's worth describing the underlying process. The following is what happens when `clear` is called with a `renewal_request` argument:
+1. The specified session is cleared and the request specified is immediately downloaded, without entering the standard request queue. The way I have achieved this, the logs and statistics are updated as normal and everything seems to go smoothly.
+2. The first response to make it to the `process_response` function in the middlewares will then re-fill the session. This should be the response derived from the `renewal_request`. (I think this is 100% guaranteed but I am not 100% sure.)
+3. The comparison of the variable `_times_jar_renewed` in the request.meta (fed in during `process_request`) with the attribute `times_jar_renewed` on the `DynamicJar` object is used to determine in the `process_response` function whether a response has been downloaded using the old session. If this is the case for a given response, the request that led to that response is sent off to be retried using the new session.   
 
 --- 
 ## Profiles
