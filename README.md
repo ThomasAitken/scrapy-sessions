@@ -6,8 +6,8 @@ A session-management extension for Scrapy.
 ## Overview
 This library resolves at least three long-standing issues in Scrapy's session-management system that people have raised concerns about for years:
 1. Scrapy's sessions are effectively a black box. They are difficult to expose and alter within a scrape.
-2. Scrapy makes it very difficult to replace/refresh a session (and/or general 'profile') unilaterally across all requests that are scheduled or enqueued. This is important for engaging with websites that have session-expiry logic.
-3. Scrapy provides no native capability for maintaing distinct profiles (client identities) within a single scrape.
+2. Scrapy makes it very difficult to replace/refresh a session (and/or general 'profile') unilaterally across all requests that are scheduled or enqueued. This is important for engaging with websites that have logic to limit session use by client identity (as defined by IP and/or user-agent). Scrapy's cookie system fails to handle such websites.
+3. Scrapy provides no native capability for maintaining distinct profiles (client identities) within a single scrape.
 
 This library contains a `CookiesMiddleware` that exposes the Scrapy cookie jars in the spider attribute `sessions`. This is an instance of the new `Sessions` class (`objects.Sessions`) that allows one to examine the content of the current sessions and to clear and/or renew a session that is failing. The renewal procedure short-circuits the Scrapy request scheduling process, inducing an immediate download of the request specified, ahead of all others. This does not cause any adverse consequences (for example, scrape statistics are maintained perfectly).
 
@@ -65,6 +65,8 @@ custom_settings = {
 
 ### Accessing the current session id
 `response.meta["session_id"]`
+<br/><br/><br/>
+In the below `self` is referring to a `Scrapy.spider` class.
 
 ### Viewing a session
 The default session (session 0):
@@ -97,8 +99,18 @@ Specifying a session works the same as before.
 This method will only work if `SESSIONS_PROFILES_SYNC` is enabled in the spider settings.
 
 ---
+## Session Refresh Motivation
+The motivation for this is for those websites that track session usage by some aspect of client identity, such as IP. This is not a common web-security feature but it does exist, and Scrapy can't handle it. By default, Scrapy will send all your requests with the one session, so if you send all your requests with the same identity signatures also, then you will be able to navigate such sites until your session expires due to reaching a time or usage limit. When this session expires, though, you need to refresh it and initiate a new one with a new identity. This library provides two ways of doing this, with and without using the `Profiles` add-on.
+
+### Session Refresh Implementation
+#### With Profiles
+Set up your profiles, then within some part of an errback function or middleware that only gets activated when a session expires (you may need some custom logic here), clear and renew your session using `sessions.clear`. Because you are using `profiles`, then any `renewal_request` you specify within the `clear` method will automatically get visited by a fresh profile.
+#### Without Profiles
+Within some part of an errback function or middleware that only gets activated when a session expires, clear and renew your session using `sessions.clear` by specifying a `renewal_request` that uses a fresh proxy and/or user-agent.
+
+---
 ## Session Refresh Logic
-The syntax for refreshing a session was included above ("Clearing and immediately renewing a session"), but since it is the most complicated part of the library it's worth describing the underlying process. The following is what happens when `clear` is called with a `renewal_request` argument:
+Since this is the most complicated part of the library it's worth describing the underlying process. The following is what happens when `clear` is called with a `renewal_request` argument:
 1. The specified session is cleared and the request specified is immediately downloaded, without entering the standard request queue. The way I have achieved this, the logs and statistics are updated as normal and everything seems to go smoothly.
 2. The first response to make it to the `process_response` function in the middlewares will then re-fill the session. This should be the response derived from the `renewal_request`. (I think this is 100% guaranteed but I am not 100% sure.)
 3. The comparison of the variable `_times_jar_renewed` in the request.meta (fed in during `process_request`) with the attribute `times_jar_renewed` on the `DynamicJar` object is used to determine in the `process_response` function whether a response has been downloaded using the old session. If this is the case for a given response, the request that led to that response is sent off to be retried using the new session.   
