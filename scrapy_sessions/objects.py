@@ -78,12 +78,14 @@ class Sessions:
     def get_profile(self, session_id=0):
         if self.profiles is not None:
             return self.profiles.ref.get(session_id, None)
-        raise UsageError('Can\'t use get_profile function when SESSIONS_PROFILES_SYNC is not enabled')
+        raise Exception('Can\'t use get_profile function when SESSIONS_PROFILES_SYNC is not enabled')
 
     def clear(self, session_id=0, renewal_request=None):
         jar = self._get(session_id)
         jar.needs_renewal = True
         jar.clear()
+        if self.profiles is not None:
+            self.profiles._clear(session_id)
 
         if renewal_request is not None:
             if renewal_request.callback is None:
@@ -119,6 +121,9 @@ class Profiles(object):
         self.used = []
         # stores keys=session_ids, values=profiles
         self.ref = {}
+
+    def _clear(self, session_id):
+        del self.ref[session_id]
 
     def new_session(self, session_id):
         available = self.get_fresh()

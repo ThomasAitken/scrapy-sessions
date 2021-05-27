@@ -31,7 +31,7 @@ class CookiesMiddleware:
                 validate_profiles(profiles)
                 profiles = Profiles(profiles)
             except AssertionError:
-                raise UsageError('Invalid configuration of profiles')
+                raise Exception('Invalid configuration of profiles')
 
         o = cls(crawler.settings.getbool('COOKIES_DEBUG'), profiles)
         crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
@@ -90,8 +90,6 @@ class CookiesMiddleware:
             jar.times_renewed += 1
             spider.logger.info('Session %d renewed with request to %s' % (session_id, request.url))
             spider.crawler.stats.inc_value('sesssions/renewal_events')
-            if self.profiles is not None:
-                self.profiles.new_session(session_id)
 
         return response
 

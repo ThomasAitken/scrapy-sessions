@@ -9,6 +9,9 @@ def load_profiles(path):
             outer_dir = os.path.dirname(closest_cfg)
         if outer_dir:
             return outer_dir
+        scrapy_module = os.environ.get('SCRAPY_SETTINGS_MODULE')
+        if scrapy_module is None and not outer_dir:
+            raise Exception("Project configuration awry")
         module = import_module(scrapy_module)
         outer_dir = os.path.dirname(os.path.dirname(module.__file__))
         return outer_dir
