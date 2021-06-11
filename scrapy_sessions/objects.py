@@ -12,6 +12,7 @@ class DynamicJar(CookieJar):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.needs_renewal = False
+        self.has_specified_req = False
         self.times_renewed = 0
 
 
@@ -25,12 +26,11 @@ class Sessions:
         self.engine=engine
 
     def __repr__(self):
-        if not x:
-            return '{}'
-        out = {}
-        for k in self:
-            out[k] = self.get(k)
-        return str(out)
+        out = ""
+        for k in self.jars.keys():
+            out += repr(self.get(k)) + "\n\n"
+        out = out.rstrip("\n")
+        return out
 
     @staticmethod
     def _flatten_cookiejar(jar):
@@ -88,8 +88,10 @@ class Sessions:
             self.profiles._clear(session_id)
 
         if renewal_request is not None:
+            jar.has_specified_req = True
             if renewal_request.callback is None:
                 renewal_request.callback=self._renew
+            renewal_request.meta.update({'_renewal': True})
             renewal_request.dont_filter=True
             self._download_request(renewal_request)
 

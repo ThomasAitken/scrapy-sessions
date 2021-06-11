@@ -54,6 +54,14 @@ class CookiesMiddleware:
 
         jar = self.jars[session_id]
         request.meta['_times_jar_renewed'] = jar.times_renewed
+        # request is using cleared session but is not the renewal request
+        if jar.needs_renewal and jar.has_specified_req and '_renewal' not in request.meta:
+            request.dont_filter = True
+            spider.crawler.stats.inc_value('retry/count')
+            reason = 'old session request'
+            spider.crawler.stats.inc_value(f'retry/reason_count/{reason}')
+            return request
+
         for cookie in self._get_request_cookies(jar, request):
             jar.set_cookie_if_ok(cookie, request)
 
@@ -87,6 +95,7 @@ class CookiesMiddleware:
         self._debug_set_cookie(response, spider)
         if jar.needs_renewal:
             jar.needs_renewal = False
+            jar.has_specified_req = False
             jar.times_renewed += 1
             spider.logger.info('Session %d renewed with request to %s' % (session_id, request.url))
             spider.crawler.stats.inc_value('sesssions/renewal_events')
