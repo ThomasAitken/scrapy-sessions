@@ -117,8 +117,8 @@ Within some part of an errback function or middleware that only gets activated w
 ## Session Refresh Logic
 Since this is the most complicated part of the library it's worth describing the underlying process. The following is what happens when `clear` is called with a `renewal_request` argument:
 1. The specified session is cleared and the request specified is immediately downloaded, without entering the standard request queue. The way I have achieved this, the logs and statistics are updated as normal and everything seems to go smoothly.
-2. The response derived from the `renewal_request` will reach the `process_response` method of the middleware and therein re-fill the session. (Any other requests/responses that reach the middleware after the `clear` trigger but before this event has occurred are re-scheduled or re-downloaded.)
-3. The comparison of the variable `_times_jar_renewed` in the request.meta (fed in during `process_request`) with the attribute `times_jar_renewed` on the `DynamicJar` object is used to determine in the `process_response` function whether a response has been downloaded using the old session. If this is the case for a given response, the request that led to that response is sent off to be retried using the new session.   
+2. The response derived from the `renewal_request` will reach the `process_response` method of the middleware and therein re-fill the session.
+3. Any other requests/responses that reach the middleware after the `clear` trigger but before the renewal event has occurred are re-scheduled or re-downloaded. To see the manner in which this is achieved, see the code.
 
 --- 
 ## Profiles
