@@ -1,9 +1,11 @@
 import itertools
 import logging
 from http.cookiejar import time2netscape
+from scrapy.http import Request, Response
 from scrapy.http.cookies import CookieJar
 from scrapy.utils.log import failure_to_exc_info
 
+from scrapy_sessions.utils import format_cookie
 
 logger = logging.getLogger(__name__)
 
@@ -36,14 +38,15 @@ class Sessions:
     def _flatten_cookiejar(jar):
         """Returns map object of cookies in http.Cookiejar.Cookies format
         """
-        full_cookies = list(itertools.chain.from_iterable(
-                            p.values() for p in jar._cookies.values()))[0]
-        cookies = full_cookies.values()
+        cookies = {}
+        for domain, val in jar._cookies.items():
+            full_cookies = list(val.values())[0]
+            cookies[domain] = full_cookies.values()
         return cookies
 
     @staticmethod
-    def _httpcookie_to_dict(cookie):
-        simple_cookie = {getattr(cookie, 'name'): getattr(cookie, 'value')}
+    def _httpcookie_to_tuple(cookie):
+        simple_cookie = (getattr(cookie, 'name'), getattr(cookie, 'value'))
         return simple_cookie
 
     @staticmethod
@@ -58,7 +61,7 @@ class Sessions:
     def _get(self, session_id=0):
         return self.jars[session_id]
     
-    def get(self, session_id=0, mode=None):
+    def get(self, session_id=0, mode=None, domain=None):
         """Returns list of cookies for the given session.
         For inspection not editing.
         """
@@ -66,12 +69,14 @@ class Sessions:
         if not jar._cookies:
             return {}
         cookies = self._flatten_cookiejar(jar)
-        neat_cookies = []
-        for c in cookies:
-            if mode == dict:
-                neat_cookies.append(self._httpcookie_to_dict(c))
-            else:
-                neat_cookies.append(self._httpcookie_to_str(c))
+        if domain is None:
+            # default to first domain. assume that if no domain specified, only one domain of interest
+            domain = next(iter(cookies.keys()))
+        cookies = cookies[domain]
+        if mode == dict:
+            neat_cookies = dict(self._httpcookie_to_tuple(c) for c in cookies)
+        else:
+            neat_cookies = [self._httpcookie_to_str(c) for c in cookies]
 
         return neat_cookies
 
@@ -79,6 +84,15 @@ class Sessions:
         if self.profiles is not None:
             return self.profiles.ref.get(session_id, None)
         raise Exception('Can\'t use get_profile function when SESSIONS_PROFILES_SYNC is not enabled')
+
+    def add_cookies_manually(self, cookies, url, session_id=0):
+        cookies = ({"name": k, "value": v} for k, v in cookies.items())
+        request = Request(url)
+        formatted = filter(None, (format_cookie(c, request) for c in cookies))
+        response = Response(request.url, headers={"Set-Cookie": formatted})
+        jar = self._get(session_id)
+        for cookie in jar.make_cookies(response, request):
+            jar.set_cookie_if_ok(cookie, request)
 
     def clear(self, session_id=0, renewal_request=None):
         jar = self._get(session_id)
