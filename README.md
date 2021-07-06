@@ -35,7 +35,7 @@ DOWNLOADER_MIDDLEWARES = {
 }
 ````
 
-This will allow you to interact with the `spider.sessions` attribute, in order to inspect, clear and renew sessions (see [*usage*](#usage)). It will also give you access to the response cookies via `response.meta["cookies"]`. 
+This will allow you to interact with the `spider.sessions` attribute, in order to inspect, modify, clear, and renew sessions (see [*usage*](#usage)). It will also give you access to the response cookies via `response.meta["cookies"]`. 
 
 ### [Profiles](#profiles)
 This is a separate add-on that hooks onto the sessions.
