@@ -96,7 +96,7 @@ clear(self, session_id=0, renewal_request=None)
 #### Description
 For clearing a session and/or immediately renewing it with a special one-off request. If you don't specify a renewal_request, the session will be retried with the first new request off the rank.
 
-I've tried hard to make this work with higher concurrency settings but it tends to cause the scrape to stall if the concurrency is too high. It always works when CONCURRENT_REQUESTS = 1. With this constraint, you can set DOWNLOAD_DELAY to a very low value with no issue.
+I've tried hard to make the specified request option work with higher concurrency settings but it tends to cause the scrape to stall if the concurrency is too high. It always works when CONCURRENT_REQUESTS = 1. With this constraint, you can set DOWNLOAD_DELAY to a very low value with no issue.
 
 --- 
 ## [Usage](#usage)
