@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='scrapy-sessions',
-    version='0.8',
+    version='0.9',
     author='Thomas Aitken',
     author_email='tclaitken@gmail.com',
     description='Session management extension for Scrapy.',

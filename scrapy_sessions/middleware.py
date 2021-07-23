@@ -59,7 +59,7 @@ class CookiesMiddleware:
         if jar.needs_renewal and jar.has_specified_req and '_renewal' not in request.meta:
             request.dont_filter = True
             spider.crawler.stats.inc_value('retry/count')
-            reason = 'old session request'
+            reason = 'renewal request impostor'
             spider.crawler.stats.inc_value(f'retry/reason_count/{reason}')
             return request
 
@@ -80,11 +80,11 @@ class CookiesMiddleware:
         session_id = request.meta.get('session_id', request.meta.get('cookiejar', 0))
         jar = self.jars[session_id]
         # response downloaded using session that was cleared
-        if jar.times_renewed > request.meta['_times_jar_renewed']:
-            request.meta['_times_jar_renewed'] = jar.times_renewed
+        if jar.times_renewed > request.meta['_times_jar_renewed'] or\
+            (jar.needs_renewal and jar.has_specified_req and '_renewal' not in request.meta):
             request.dont_filter = True
             spider.crawler.stats.inc_value('retry/count')
-            reason = 'old session request'
+            reason = 'old session request' if not jar.needs_renewal else 'renewal request impostor'
             spider.crawler.stats.inc_value(f'retry/reason_count/{reason}')
             return request
 
