@@ -35,7 +35,7 @@ DOWNLOADER_MIDDLEWARES = {
 }
 ````
 
-This will allow you to interact with the `spider.sessions` attribute, in order to inspect, clear and renew sessions (see [*usage*](#usage)). It will also give you access to the response cookies via `response.meta["cookies"]`. 
+This will allow you to interact with the `spider.sessions` attribute, in order to inspect, modify, clear, and renew sessions (see [*usage*](#usage)). It will also give you access to the response cookies via `response.meta["cookies"]`. 
 
 ### [Profiles](#profiles)
 This is a separate add-on that hooks onto the sessions.
@@ -62,6 +62,41 @@ custom_settings = {
 Currently, this `load_profiles` function fails when trying to deploy on Zyte. I will try to solve this issue when I have time.
 
 --- 
+## Methods
+Access these methods via the `sessions` instance attached to your spider when using this library. For example usage, see the next section.
+### get
+#### Signature
+````
+get(self, session_id=0, mode=None, domain=None)
+````
+#### Description
+For inspecting your sessions. Two formats toggled by mode: dictionary (name:value) or list of strings (containing the full cookie data for each cookie).  
+
+### get_profile
+#### Signature
+````
+get_profile(self, session_id=0)
+````
+#### Description
+For inspecting the profile attached to the given session. Only works if `SESSIONS_PROFILES_SYNC` is enabled.  
+
+### add_cookies_manually
+#### Signature
+````
+add_cookies_manually(self, cookies, url, session_id=0)
+````
+#### Description
+For explicitly adding a set of cookies to a given session. The cookies must be in the format {name:value}; the url is the url that these cookies would come from conventionally.  
+
+### clear
+#### Signature
+````
+clear(self, session_id=0, renewal_request=None)
+````
+#### Description
+For clearing a session and/or immediately renewing it with a special one-off request. If you don't specify a renewal_request, the session will be retried with the first new request off the rank.
+
+--- 
 ## [Usage](#usage)
 ### Accessing the cookies received in the last response
 `response.meta["cookies"]`
@@ -72,11 +107,15 @@ Currently, this `load_profiles` function fails when trying to deploy on Zyte. I 
 In the below `self` is referring to a `Scrapy.spider` class.
 
 ### Viewing a session
-The default session (session 0):
+
+The cookies in the first domain of the default session (session 0):
 `self.sessions.get()`
 
-A specified session:
+The cookies in the first domain of a specified session:
 `self.sessions.get(response.meta["session_id"])`
+
+A specified session with a specified domain:
+`self.sessions.get(response.meta["session_id"], domain='exampledomain.com')`
 
 In dictionary format:
 `self.sessions.get(session_id, mode=dict)`
@@ -100,6 +139,9 @@ The profile for the default session:
 Specifying a session works the same as before.
 
 This method will only work if `SESSIONS_PROFILES_SYNC` is enabled in the spider settings.
+
+### Explicitly adding cookies to a session
+`self.sessions.add_cookies_manually({name1: val1, name2: val2}, 'https://exampledomain.com/', 0)`
 
 ---
 ## Session Refresh Motivation
@@ -134,3 +176,11 @@ Similarly, the "user-agent" value is fed into `request.headers["user-agent"]`.
 --- 
 ## Future Directions
 I am planning to add tests, and then I may at some point submit a pull request on the Scrapy repository proposing this as a replacement for the default Scrapy `CookiesMiddleware`.
+
+---
+## Miscellaneous
+I've noticed what might be described as a bug in the default Scrapy implementation of the cookiejar via the http.cookiejar library. I'm not sure it raises to the level of a bug but either way it's an unexpected behaviour. This library has not addressed it because it would be best addressed within the http.cookiejar library itself. The behaviour is as follows:
+
+In Scrapy, you can send off a number of cookies with a single request. These get merged with the existing cookies in the session before the request is sent off. One way of adding these cookies to the request is in list format, and within this format, you can specify a domain for each cookie. (e.g. `cookies=[{'name':name','value':value,'domain':domain}]`). If you specify this domain, these cookies will get stored in the session (cookiejar) under that domain except with a leading dot (full stop). It doesn't matter whether you include this leading dot yourself or not. But, by default, any cookies that get added to the session when you make requests to that very same domain without explicit cookies will be added to the session without this leading dot. Therefore, because these two sets of cookies only get merged together if they are filed under an identical domain, the cookies may fail to merge properly in the next request to that domain, so that you end up sending cookies that overlap (with duplicate names or potentially even duplicate names + values).
+
+This can be resolved either by simply not adding an explicit domain to cookies that you specify in this way, or by using the method `add_cookies_manually` to add these extra cookies to the session before you send off any requests that require them.
