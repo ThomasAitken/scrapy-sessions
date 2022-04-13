@@ -86,7 +86,8 @@ class Sessions:
         raise Exception('Can\'t use get_profile function when SESSIONS_PROFILES_SYNC is not enabled')
 
     def add_cookies_manually(self, cookies, url, session_id=0):
-        cookies = ({"name": k, "value": v} for k, v in cookies.items())
+        if type(cookies) is dict:
+            cookies = ({"name": k, "value": v} for k, v in cookies.items())
         request = Request(url)
         formatted = filter(None, (format_cookie(c, request) for c in cookies))
         response = Response(request.url, headers={"Set-Cookie": formatted})
