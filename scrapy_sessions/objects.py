@@ -84,7 +84,14 @@ class Sessions:
         if self.profiles is not None:
             return self.profiles.ref.get(session_id, None)
         raise Exception('Can\'t use get_profile function when SESSIONS_PROFILES_SYNC is not enabled')
-
+        
+    def add_formatted_cookies_manually(self, formatted_cookies, url, session_id=0):
+        request = Request(url)
+        response = Response(request.url, headers={"Set-Cookie": formatted_cookies})
+        jar = self._get(session_id)
+        for cookie in jar.make_cookies(response, request):
+            jar.set_cookie_if_ok(cookie, request)
+            
     def add_cookies_manually(self, cookies, url, session_id=0):
         cookies = ({"name": k, "value": v} for k, v in cookies.items())
         request = Request(url)
