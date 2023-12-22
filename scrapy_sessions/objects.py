@@ -118,7 +118,7 @@ class Sessions:
 
     def _download_request(self, request):
         d = self.engine._download(request, self.spider)
-        d.addBoth(self.engine._handle_downloader_output, request, self.spider)
+        d.addBoth(self.engine._handle_downloader_output, request)
         d.addErrback(lambda f: logger.info('Error while handling downloader output',
                                         exc_info=failure_to_exc_info(f),
                                         extra={'spider': self.spider}))
