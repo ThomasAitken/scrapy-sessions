@@ -93,7 +93,8 @@ class Sessions:
             jar.set_cookie_if_ok(cookie, request)
             
     def add_cookies_manually(self, cookies, url, session_id=0):
-        cookies = ({"name": k, "value": v} for k, v in cookies.items())
+        if type(cookies) is dict:
+            cookies = ({"name": k, "value": v} for k, v in cookies.items())
         request = Request(url)
         formatted = filter(None, (format_cookie(c, request) for c in cookies))
         response = Response(request.url, headers={"Set-Cookie": formatted})
